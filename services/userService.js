@@ -2,7 +2,6 @@ const userDao = require("../models/userDao");
 const errUtils = require("../utils/errUtils");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const nodemailer = require("nodemailer");
 
 const signUp = async (name, email, password, nickname) => {
   //같은 유저가 있는경우
@@ -28,7 +27,7 @@ const login = async (email, password) => {
     });
   }
   //암호화 비밀번호 , 입력된비밀번호 비교
-  const info = await userDao.sendLogIn(email, password);
+  const info = await userDao.sendLogIn(email);
   if (!bcrypt.compareSync(password, info[0].password)) {
     throw errUtils.errGenerator({
       statusCode: 400,
@@ -40,56 +39,20 @@ const login = async (email, password) => {
   return token;
 };
 
-const insertAuthNumberByEmail = async (email) => {
-  //이메일 중복여부 확인
-  const user = await userDao.checkWithEmail(email);
-  if (!user[0]) {
+const alterPassword = async (email, alter_password) => {
+  //이전비밀번호 새비밀번호 비교
+  const info = await userDao.getPasswordWithEmail(email);
+
+  if (bcrypt.compareSync(alter_password, info[0].password)) {
     throw errUtils.errGenerator({
       statusCode: 400,
-      message: "This user does not exist.",
+      message: "Same as previous password.",
     });
   }
-  //무작위 authnumber 만들어서 db에 저장
-  ("1");
-  let randomNum = {};
 
-  randomNum.random = (num1, num2) => {
-    return parseInt(Math.random() * (num2 - num1 + 1));
-  };
-
-  randomNum.authNo = (n) => {
-    let value = "";
-    for (var i = 0; i < n; i++) {
-      value += randomNum.random(0, 9);
-    }
-    return value;
-  };
-
-  let auth_number = randomNum.authNo(5);
-  "authnumber =", auth_number;
-  await userDao.insertAuthNumber(email, auth_number);
-
-  //email로 보내기.
-  let transporter = nodemailer.createTransport({
-    service: "gmail",
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-      // Gmail 주소 입력, 'testmail@gmail.com'
-      user: process.env.AUTH_EMAIL,
-      // Gmail 패스워드 입력
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-
-  await transporter.sendMail({
-    from: "weworkout1251@gmail.com",
-    to: email,
-    subject: "We Workout!!",
-    text: "인증번호를 입력란에 입력해주세요!",
-    html: `<b>${auth_number}</b>`,
-  });
-  ("메일보내기 완료!");
+  //새 비밀번호 암호화
+  const salt = bcrypt.genSaltSync();
+  const encryptedPw = bcrypt.hashSync(alter_password, salt);
+  await userDao.alterPassword(email, encryptedPw);
 };
-module.exports = { signUp, login, insertAuthNumberByEmail };
+module.exports = { signUp, login, alterPassword };

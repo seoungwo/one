@@ -29,7 +29,7 @@ model Users {
 
 model Auth {
   id          Int    @id @default(autoincrement())
-  auth_email  String
+  auth_email  String @unique
   auth_number String
 
   @@map("auth")

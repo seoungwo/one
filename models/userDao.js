@@ -24,15 +24,14 @@ const createUser = async (name, email, encryptedPW, nickname) => {
   });
 };
 
-const insertAuthNumber = async (email, auth_number) => {
-  await prisma.auth.create({
-    data: {
-      auth_email: email,
-      auth_number,
-    },
-  });
+const getPasswordWithEmail = async (email) => {
+  return await prisma.$queryRaw`
+  select password from users where email = ${email} `;
 };
-
+const alterPassword = async (email, encryptedPW) => {
+  await prisma.$queryRaw`
+  UPDATE users SET password=${encryptedPW}  WHERE email = ${email}`;
+};
 // const getUserByUserId = async (userId) => {
 //   return await prisma.users.findUnique({
 //     where: {
@@ -45,6 +44,7 @@ module.exports = {
   sendLogIn,
   checkWithEmail,
   createUser,
-  insertAuthNumber,
+  getPasswordWithEmail,
+  alterPassword,
   // getUserByUserId,
 };

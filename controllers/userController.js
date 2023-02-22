@@ -41,24 +41,16 @@ const login = async (req, res, next) => {
   }
 };
 
-const insertAuthNumberByEmail = async (req, res, next) => {
+const alterPassword = async (req, res, next) => {
   try {
-    const { email } = req.body;
-    if (!email) {
-      throw errUtils.errGenerator({
-        statCode: 400,
-        message: "KEY_ERROR",
-      });
-    }
-
-    //해당이메일로 일련번호 보내야함
-    await userService.insertAuthNumberByEmail(email);
+    const { email, alter_password } = req.body;
+    await userService.alterPassword(email, alter_password);
 
     return res.status(201).json({
-      message: "auth_number transfer success",
+      message: "Password alter success",
     });
   } catch (err) {
     next(err);
   }
 };
-module.exports = { login, signUp, insertAuthNumberByEmail };
+module.exports = { login, signUp, alterPassword };
